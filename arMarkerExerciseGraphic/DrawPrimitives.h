@@ -16,18 +16,18 @@ void drawSphere(double r, int lats, int longs) {
 	int i, j;
 	for(i = 0; i <= lats; i++) {
 		double lat0 = M_PI * (-0.5 + (double) (i - 1) / lats);
-		double z0  = r * sin(lat0);
-		double zr0 = r *  cos(lat0);
+		GLfloat z0  = r * sin(lat0);
+		GLfloat zr0 = r *  cos(lat0);
 
 		double lat1 = M_PI * (-0.5 + (double) i / lats);
-		double z1  = r * sin(lat1);
-		double zr1 = r * cos(lat1);
+		GLfloat z1  = r * sin(lat1);
+		GLfloat zr1 = r * cos(lat1);
 
 		glBegin(GL_QUAD_STRIP);
 		for(j = 0; j <= longs; j++) {
 			double lng = 2 * M_PI * (double) (j - 1) / longs;
-			double x = cos(lng);
-			double y = sin(lng);
+			GLfloat x = cos(lng);
+			GLfloat y = sin(lng);
 
 			glNormal3f(x * zr0, y * zr0, z0);
 			glVertex3f(x * zr0, y * zr0, z0);
