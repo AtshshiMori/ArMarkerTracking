@@ -20,13 +20,13 @@ const Scalar green(0, 255, 0);
 const Scalar blue(255, 0, 0);
 const Scalar yellow(0, 255, 255);
 
-void cycleArray(vector<Point2f>);
+void cycleArray(vector<Point2f>&);
 
 MarkerTracker::MarkerTracker(const double MarkerSize) {
 	kMarkerSize = MarkerSize;
 };
 
-void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSet)
+void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> &markerSet)
 {
 	img = srcimg;
 	// 画像が読み込まれなかったらプログラム終了
@@ -58,11 +58,19 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 	}
 	if (approxContours.size() == 0)return;
 
+
+	/*-------------------------------------
+		デバッグ用
+	--------------------------------------*/
 	for (auto cont = approxContours.begin(); cont != approxContours.end(); cont++) {
 		for (auto p = (*cont).begin(); p != (*cont).end(); p++) {
 			//circle(img, *p, 5, red, -1);//確認のための出力
 		}
 	}
+	/*-------------------------------------
+		デバッグ終わり
+	--------------------------------------*/
+
 	
 	bool noMarkerFlag = false;//マーカーかどうか
 	vector<Vec4f> lines(4);//4辺
@@ -83,12 +91,10 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 			circle(img,*p, 5, blue, -1);//確認のための出力
 		}
 
-		imshow("img", img);
-		waitKey(0);
-
 		int smallestId = 100000000;//最小のId
 		int smallestIdnum;//最小のIdのときの番号
 		
+		//四方向の向きでidを計算して最小のもので確定させる
 		for (int a=0; a < 4; a++) {
 
 			//透視変換
@@ -109,7 +115,6 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 			for (int i = 0; i < 4; i++) {
 
 				Mat row = idImg44.row(i) / 255;
-				//cout  << row << endl;
 				int num = row.at<unsigned char>(3) + (row.at<unsigned char>(2) * 2) + (row.at<unsigned char>(1) * 4) + (row.at<unsigned char>(0) * 8);
 				rowId[i] = num;
 
@@ -124,8 +129,27 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 				break;
 			
 			}
+
+
+			/*-------------------------------------
+			 デバッグ用
+			--------------------------------------*/
+			//cout << "id:";
+			//for (auto i : rowId) {
+			//	cout << i << " ";
+			//}
+			//Mat idImg44_debug;
+			//resize(idImg44, idImg44_debug, Size(), 100, 100, INTER_AREA);//見えやすいよう拡大
+			//imshow("id"+a, idImg44_debug);
+			//waitKey(0);
+			/*-------------------------------------
+				デバッグ終わり
+			--------------------------------------*/
+
+
 			int id = rowId[3] + rowId[2] * 16 + rowId[1] * 16 * 16 + rowId[0] * 16 * 16 * 16;
 
+			
 			if (id < smallestId) {
 				smallestId = id;
 				smallestIdnum = a;
@@ -140,6 +164,9 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 		for (int a = 0; a < smallestIdnum; a++) {
 			cycleArray(lineInters);
 		}
+		
+		//idをチェックしたいときに使う関数
+		//checkMarkerId(lineInters, smallestId);
 
 		//中心にずらす
 		for (int i = 0; i < 4; i++) {
@@ -151,13 +178,6 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 		estimateSquarePose(&resultMatrix.front(), &lineInters.front(), kMarkerSize);
 
 		markerSet[smallestId] =  resultMatrix;
-
-		/*system("cls");
-		for (int i = 0; i < 16; i++) {
-
-			cout << resultMatrix[i] << "\t";
-			if (i % 4 == 3)cout << endl;
-		}*/
 	}
 	return;
 	/*-------------------------------------
@@ -173,7 +193,7 @@ void MarkerTracker::findMarker(cv::Mat& srcimg, map<int, vector<float>> markerSe
 
 }
 
-void cycleArray(vector<Point2f> array) {
+void cycleArray(vector<Point2f> &array) {
 	Point tmp = array[0];
 	array[0] = array[3];
 	array[3] = array[2];
@@ -294,23 +314,12 @@ bool MarkerTracker::correctSide(vector<Point> square, vector<Vec4f> &lines) {
 
 			Point2d borderPoint = (Point2d)splitPoint[i] + vec;//補正後の境界点
 			borderPoints.push_back(borderPoint);
-
-			circle(img, borderPoint, 5, blue, -1);
-
 		}
 		
 		//求めた６点から直線にフィッティング
 		Vec4f line;
 		fitLine(borderPoints, line, CV_DIST_L2, 0, 0.01, 0.01);
 		lines[j] = line;
-
-		//確認のため出力
-		Point2f p{ line[2] - line[0] * 200, line[3] - line[1] * 200 };
-		Point2f p2{ line[2] + line[0] * 200, line[3] + line[1] * 200 };
-		cv::line(img, p, p2, green);
-		imshow("img", img);
-		waitKey(0);
-
 	}
 	return true;
 }
@@ -345,4 +354,24 @@ void MarkerTracker::getInters(vector<Vec4f> lines, vector<Point2f> &lineInters) 
 		solve(A, B, lineInter);
 		lineInters[i] = (Point2f)lineInter;
 	}
+}
+
+void MarkerTracker::checkMarkerId(vector<Point2f> lineInters, int smallestId) {
+	//透視変換
+	Mat idImg = Mat::zeros(6, 6, CV_8UC1);
+	Point2f idImgPoints[4] = { Point2f{ 0,5 },Point2f{ 5,5 },Point2f{ 5,0 },Point2f{ 0,0 } };
+
+	Mat homography_mat = getPerspectiveTransform(&lineInters.front(), idImgPoints);
+	warpPerspective(img_gray, idImg, homography_mat, idImg.size());
+
+	//二値変換
+	threshold(idImg, idImg, 135, 255, CV_THRESH_BINARY_INV);
+
+	Mat idImg44(idImg, Rect(1, 1, 4, 4));
+
+	cout << "id:" << smallestId << endl;
+	Mat idImg44_debug;
+	resize(idImg44, idImg44_debug, Size(), 100, 100, INTER_AREA);//見えやすいよう拡大
+	imshow("id", idImg44_debug);
+	waitKey(0);
 }

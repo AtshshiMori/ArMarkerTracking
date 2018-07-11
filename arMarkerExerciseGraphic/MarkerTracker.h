@@ -19,7 +19,8 @@ private:
 
 public:
 	MarkerTracker(const double);
-	void findMarker(cv::Mat&, map<int, vector<float>>);
+	void findMarker(cv::Mat&, map<int, vector<float>>&);
 	bool correctSide(vector<cv::Point>, vector<Vec4f>&);
 	void getInters(vector<Vec4f>, vector<Point2f>&);
+	void checkMarkerId(vector<Point2f>, int);
 };
