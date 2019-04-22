@@ -1,7 +1,11 @@
 # ArMarkerTracking
-for understanding mechanism of AR tracking basing marker
+AR tracking basing marker using OpenCV and OpenGL
 
-"/arMarkerExerciseGraphic/arMarkerExerciseGraphic.cpp"is main program using OpenGL.
-"/arMarkerExerciseGraphic/MarkerTracker.cpp" is subfunction using OpenCV.
+## Main program
+Detecting marker by OpenCV  
+[/arMarkerExerciseGraphic/MarkerTracker.cpp](https://github.com/AtshshiMori/ArMarkerTracking/blob/master/arMarkerExerciseGraphic/MarkerTracker.cpp)  
+
+Rendering graphics by OpenGL  
+[/arMarkerExerciseGraphic/arMarkerExerciseGraphic.cpp](https://github.com/AtshshiMori/ArMarkerTracking/blob/master/arMarkerExerciseGraphic/arMarkerExerciseGraphic.cpp)  
 
 ![artracking](/arMarkerExerciseGraphic/artracking.jpg "artrcking")
